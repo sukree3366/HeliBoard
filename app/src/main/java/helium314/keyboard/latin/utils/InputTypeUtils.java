@@ -60,6 +60,24 @@ public final class InputTypeUtils implements InputType {
         return isPasswordInputType(inputType) || isVisiblePasswordInputType(inputType);
     }
 
+    /**
+     * Forces autocorrect and sentence capitalization for all text fields, ignoring the
+     * {@link InputType#TYPE_TEXT_FLAG_NO_SUGGESTIONS} flag requested by the app.
+     * Password fields (including visible password fields) are left untouched, so that
+     * credentials are never routed into suggestions or autocorrection.
+     *
+     * @param inputType the input type requested by the app, already adjusted by app workarounds
+     * @return the input type with autocorrect and sentence capitalization forced
+     */
+    public static int forceSuggestionsAndCapitalization(final int inputType) {
+        // only TYPE_CLASS_TEXT fields have these flags, leave number/phone/datetime/TYPE_NULL alone
+        if ((inputType & TYPE_MASK_CLASS) != TYPE_CLASS_TEXT) return inputType;
+        if (isAnyPasswordInputType(inputType)) return inputType;
+        return (inputType & ~TYPE_TEXT_FLAG_NO_SUGGESTIONS)
+                | TYPE_TEXT_FLAG_CAP_SENTENCES
+                | TYPE_TEXT_FLAG_AUTO_CORRECT;
+    }
+
     public static boolean isAutoSpaceFriendlyType(final int inputType) {
         if (TYPE_CLASS_TEXT != (TYPE_MASK_CLASS & inputType)) return false;
         final int variation = TYPE_MASK_VARIATION & inputType;

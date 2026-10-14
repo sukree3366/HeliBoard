@@ -54,10 +54,16 @@ public final class InputAttributes {
         mEditorInfo = editorInfo;
         mPackageNameForPrivateImeOptions = packageNameForPrivateImeOptions;
         mTargetApplicationPackageName = null != editorInfo ? editorInfo.packageName : null;
-        mInputType = AppWorkarounds.INSTANCE.adjustInputType(null != editorInfo ? editorInfo.inputType : 0, mTargetApplicationPackageName);
-        final int inputClass = mInputType & InputType.TYPE_MASK_CLASS;
-        mIsPasswordField = InputTypeUtils.isPasswordInputType(mInputType)
-                || InputTypeUtils.isVisiblePasswordInputType(mInputType);
+        final int adjustedInputType = AppWorkarounds.INSTANCE.adjustInputType(null != editorInfo ? editorInfo.inputType : 0, mTargetApplicationPackageName);
+        final int inputClass = adjustedInputType & InputType.TYPE_MASK_CLASS;
+        final boolean isPasswordField = InputTypeUtils.isPasswordInputType(adjustedInputType)
+                || InputTypeUtils.isVisiblePasswordInputType(adjustedInputType);
+        mIsPasswordField = isPasswordField;
+        // Force autocorrect and sentence capitalization for text fields, ignoring
+        // TYPE_TEXT_FLAG_NO_SUGGESTIONS. This has to run after the app workarounds, which may add
+        // the flag back (e.g. for Firefox text fields), so that suggestions really always show up.
+        // forceSuggestionsAndCapitalization() returns password fields unchanged.
+        mInputType = InputTypeUtils.forceSuggestionsAndCapitalization(adjustedInputType);
         if (inputClass != InputType.TYPE_CLASS_TEXT) {
             // If we are not looking at a TYPE_CLASS_TEXT field, the following strange
             // cases may arise, so we do a couple sanity checks for them. If it's a

@@ -78,6 +78,7 @@ import helium314.keyboard.latin.utils.GestureDataGatheringKt;
 import helium314.keyboard.latin.utils.GestureDataGatheringSettings;
 import helium314.keyboard.latin.utils.InlineAutofillUtils;
 import helium314.keyboard.latin.utils.InputMethodPickerKt;
+import helium314.keyboard.latin.utils.InputTypeUtils;
 import helium314.keyboard.latin.utils.JniUtils;
 import helium314.keyboard.latin.utils.KtxKt;
 import helium314.keyboard.latin.utils.LeakGuardHandlerWrapper;
@@ -798,6 +799,13 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
+        // The framework hands us the same EditorInfo instance it returns from
+        // getCurrentInputEditorInfo() (InputMethodService.doStartInput() keeps the reference), so
+        // rewriting the flags here - before super.onStartInputView() is reached through mHandler -
+        // makes every consumer of the input type see the forced flags.
+        if (editorInfo != null) {
+            editorInfo.inputType = InputTypeUtils.forceSuggestionsAndCapitalization(editorInfo.inputType);
+        }
         mHandler.onStartInputView(editorInfo, restarting);
         mStatsUtilsManager.onStartInputView();
     }
