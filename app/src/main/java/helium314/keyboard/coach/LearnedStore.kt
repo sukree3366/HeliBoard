@@ -434,10 +434,11 @@ object LearnedStore {
         if (delayMs == 0L && now - lastSaveTime < 1000) return
         lastSaveTime = now
         dirty = false
-        val snapshot = synchronized(lock) { toJson() }
         val appContext = context.applicationContext
         ExecutorUtils.getBackgroundExecutor(ExecutorUtils.KEYBOARD).execute {
             try {
+                // serialise on the background thread, never on the input thread
+                val snapshot = synchronized(lock) { toJson() }
                 val file = file(appContext)
                 file.parentFile?.mkdirs()
                 val temp = File(file.parentFile, "$FILE_NAME.tmp")

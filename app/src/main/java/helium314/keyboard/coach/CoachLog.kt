@@ -113,8 +113,10 @@ object CoachLog {
             append('}')
         }
         val level = context
-        executor.execute { appendLine(level, line) }
-        CoachAggregates.onSession(sessionKey)
+        executor.execute {
+            CoachAggregates.onSession(sessionKey)
+            appendLine(level, line)
+        }
     }
 
     fun endSession(context: Context) {
@@ -259,7 +261,10 @@ object CoachLog {
 
     fun clear(context: Context) {
         executor.execute {
-            directory(context).listFiles()?.forEach { it.delete() }
+            // only the coach's own data, never the learned corrections or the backups
+            directory(context).listFiles()?.forEach { file ->
+                if (file.name.startsWith(LOG_PREFIX) || file.name.startsWith("aggregates")) file.delete()
+            }
             currentLogIndex = -1
             currentLogSize = 0
         }
@@ -303,7 +308,10 @@ object CoachLog {
         }
     }
 
-    fun summary(context: Context): String = CoachAggregates.summaryText()
+    fun summary(context: Context): String {
+        CoachAggregates.load(context)
+        return CoachAggregates.summaryText()
+    }
 
     // ------------------------------------------------------------------ helpers
 
@@ -443,6 +451,7 @@ object CoachAggregates {
 
     /** Loads stored aggregates. Used by the settings screen, which has no typing session. */
     fun load(context: Context) {
+        if (keyStats.isNotEmpty() || totals.isNotEmpty()) return
         loadFrom(context)
     }
 
@@ -525,20 +534,28 @@ object CoachAggregates {
         flush(context)
     }
 
+    /** Serialises the aggregates and writes them in the background. */
     fun flush(context: Context) {
         val json: String
         synchronized(this) {
             pendingWrites = 0
             json = toJson()
         }
-        try {
-            val file = File(File(context.filesDir, CoachLog.DIR), FILE_NAME)
-            file.parentFile?.mkdirs()
-            file.writeText(json)
-        } catch (t: Throwable) {
-            Log.w(TAG, "could not save aggregates", t)
+        val appContext = context.applicationContext
+        writer.execute {
+            try {
+                val file = File(File(appContext.filesDir, CoachLog.DIR), FILE_NAME)
+                file.parentFile?.mkdirs()
+                file.writeText(json)
+            } catch (t: Throwable) {
+                Log.w(TAG, "could not save aggregates", t)
+            }
+            TouchOffsetModel.invalidate()
         }
-        TouchOffsetModel.invalidate()
+    }
+
+    private val writer = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "typing-coach-stats").apply { isDaemon = true }
     }
 
     private fun loadIfNeeded() {

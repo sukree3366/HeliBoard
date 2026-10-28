@@ -256,7 +256,7 @@ fun createCoachSettings(context: Context) = listOf(
         var showDialog by rememberSaveable { mutableStateOf(false) }
         Preference(
             name = setting.title,
-            description = Coach.touchOffsetReadout(),
+            description = Coach.touchOffsetReadout(context),
             onClick = { showDialog = true },
         )
         if (showDialog) {

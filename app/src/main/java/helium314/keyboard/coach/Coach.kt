@@ -220,6 +220,7 @@ object Coach {
                 CoachLog.onFix(context, typedWord, committedWord, how, null, null, alignment)
             }
             CoachLog.onWordCommitted()
+            pendingManualFix = null
 
             if (!learningAllowed) return
             if (isManualFix && manual != null) {
@@ -227,7 +228,6 @@ object Coach {
             } else if (how == "suggestion" && !isValidWord(typedWord, facilitator)) {
                 considerPair(context, typedWord, committedWord, facilitator, "suggestion")
             }
-            pendingManualFix = null
         } catch (t: Throwable) {
             Log.w(TAG, "onWordCommitted failed", t)
         }
@@ -329,7 +329,10 @@ object Coach {
 
     /** Readout for the settings screen. */
     @JvmStatic
-    fun touchOffsetReadout(): String = TouchOffsetModel.current(sessionKey).describe()
+    fun touchOffsetReadout(context: Context): String {
+        CoachAggregates.load(context)
+        return TouchOffsetModel.current(sessionKey).describe()
+    }
 
     @JvmStatic
     fun resetTouchOffsetModel(context: Context) {

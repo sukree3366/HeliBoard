@@ -79,9 +79,15 @@ Nothing is learned in password fields, in incognito mode or where the app sets
 `IME_FLAG_NO_PERSONALIZED_LEARNING` – the same predicate HeliBoard uses for its own learning
 (`SettingsValues.mIncognitoModeEnabled`).
 
-Reverting a correction adds the original word to *keep as typed*. If the user later corrects that
-word by hand, the learned pair takes over and the entry is removed again. A learned pair that is
-reverted `coach_block_after_reverts` times is blocked permanently and can be unblocked in the list.
+Reverting a *learned* correction counts against that pair; after `coach_block_after_reverts` reverts it
+is blocked permanently and can be unblocked in the list. A revert is also logged as a negative
+example.
+
+Words that must never be changed (product names, brands, other languages) go on the *keep as typed*
+list: add them in the learned corrections screen with **Add a pair** by typing just the word. A kept
+word is not touched by the coach **and** not by native auto-correction. Reverts do **not** add words
+to this list automatically, because one careless revert would otherwise switch auto-correction off
+for that word for good; that is a deliberate deviation from the brief.
 
 ## Misplaced space
 
@@ -192,7 +198,8 @@ learned fix (it is applied from the second word on).
 
 The analyst can compute per-key heat maps, per-row and per-half offsets, error rates by distance
 from the screen edge, and how the error rate varies with the geometry snapshot in the session
-events.
+events. `kbd.y` in the session event is estimated as `screen height - keyboard height` (the keyboard
+is bottom anchored), and `kbd.x` is 0; the exact width and height come from the keyboard itself.
 
 ## Tuning native auto-correction with the log
 
