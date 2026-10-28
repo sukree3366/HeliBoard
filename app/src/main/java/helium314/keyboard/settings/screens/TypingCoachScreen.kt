@@ -170,7 +170,6 @@ fun createCoachSettings(context: Context) = listOf(
             description = stringResource(R.string.coach_summary_summary),
             onClick = {
                 LearnedStore.ensureLoaded(context)
-                CoachLog.flush()
                 summary = CoachLog.summary(context)
                 showDialog = true
             },

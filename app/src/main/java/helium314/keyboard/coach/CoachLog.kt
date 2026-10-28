@@ -279,6 +279,8 @@ object CoachLog {
      * raw data and a human readable file can be shared with the analyst.
      */
     fun export(context: Context, output: OutputStream): Boolean {
+        // make sure everything that was queued is in the file before it is copied
+        runCatching { executor.submit { }.get(2, TimeUnit.SECONDS) }
         return try {
             val files = directory(context).listFiles()
                 ?.filter { it.isFile && it.name.startsWith(LOG_PREFIX) }
@@ -403,14 +405,7 @@ object CoachLog {
         }
     }
 
-    /** Called from the settings screen so the user sees the current state immediately. */
-    fun flush() {
-        try {
-            executor.submit { }.get(5, TimeUnit.SECONDS)
-        } catch (t: Throwable) {
-            Log.w(TAG, "flush failed", t)
-        }
-    }
+
 }
 
 /**
@@ -536,13 +531,12 @@ object CoachAggregates {
 
     /** Serialises the aggregates and writes them in the background. */
     fun flush(context: Context) {
-        val json: String
-        synchronized(this) {
-            pendingWrites = 0
-            json = toJson()
-        }
         val appContext = context.applicationContext
         writer.execute {
+            val json = synchronized(this) {
+                pendingWrites = 0
+                toJson()
+            }
             try {
                 val file = File(File(appContext.filesDir, CoachLog.DIR), FILE_NAME)
                 file.parentFile?.mkdirs()
