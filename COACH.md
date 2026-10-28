@@ -210,6 +210,48 @@ Divide `how:"reverted"` events by all `how:"autocorrect"` events:
 * if reverts stay high even at the lowest level, switch native auto-correction off and let the
   learned layer work alone.
 
+## Installing and updating
+
+The workflow in `.github/workflows/build.yml` builds the debug variant (`helium314.keyboard.debug`),
+so it installs next to a normal HeliBoard from the store, and runs the coach unit tests after the
+APK has been uploaded.
+
+By default the APK is signed with the debug keystore that Gradle generates on the runner, and that
+keystore is **different on every workflow run**. Android then refuses to install one build over the
+other, so an update means: *Backup and restore* → backup, uninstall, install, restore. The learned
+corrections survive that round trip because `coach/learned.json` is part of the backup.
+
+### Keep your own signing key
+
+To make later builds install over earlier ones (and keep the learned data), create one keystore and
+use it for every build:
+
+```bash
+keytool -genkeypair -keystore coach.jks -storetype PKCS12 -alias coach \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 coach.jks > coach.jks.b64     # macOS: base64 -i coach.jks -o coach.jks.b64
+```
+
+Store `coach.jks.b64` **offline** as well: losing it means the installed app can never be updated
+in place again. Then add four repository secrets to the fork (Settings → Secrets and variables →
+Actions):
+
+| Secret | Value |
+| --- | --- |
+| `COACH_KEYSTORE_BASE64` | contents of `coach.jks.b64` |
+| `COACH_KEYSTORE_PASSWORD` | keystore password |
+| `COACH_KEY_ALIAS` | `coach` |
+| `COACH_KEY_PASSWORD` | key password |
+
+The workflow decodes the keystore into the runner's temp directory and exports
+`COACH_KEYSTORE_FILE` / `COACH_KEYSTORE_PASSWORD` / `COACH_KEY_ALIAS` / `COACH_KEY_PASSWORD`;
+`app/build.gradle.kts` then signs with it. Without those variables the build falls back to the
+generated debug keystore, so a fork without secrets keeps working.
+
+For local builds the same four variables work without any workflow, e.g.
+`COACH_KEYSTORE_FILE=coach.jks COACH_KEYSTORE_PASSWORD=… COACH_KEY_ALIAS=coach COACH_KEY_PASSWORD=… ./gradlew assembleDebug`.
+Check which key a variant will use with `./gradlew signingReport` (look for `Config: stable`).
+
 ## Known limitations
 
 * Only the language of the active subtype is used for learning (`learned.json` is per language).
@@ -218,5 +260,9 @@ Divide `how:"reverted"` events by all `how:"autocorrect"` events:
 * The touch offset model applies the global and left/right offsets; per-row offsets are computed,
   exported and shown in the readout but not applied, because rows are not addressed in
   `processMotionEvent`.
+* Without the optional keystore above, every workflow run produces an APK that needs a fresh
+  install (see "Installing and updating").
+* CI runs only the coach tests, because the upstream test suite has known failures on this base
+  commit.
 * The brief's "everyday word" test uses dictionary validity plus the short-word whitelist instead of
   a frequency threshold, because `DictionaryFacilitator` does not expose word frequencies.

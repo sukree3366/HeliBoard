@@ -6,6 +6,13 @@ plugins {
     kotlin("plugin.compose") version "2.4.0"
 }
 
+// Optional stable signing (see COACH.md, "Keep your own signing key"):
+// when COACH_KEYSTORE_FILE points at a keystore, every build is signed with it, so a new APK
+// installs over the previous one and the learned corrections survive the update. Without these
+// variables nothing changes and Gradle's generated debug keystore is used, as before.
+val coachKeystorePath: String? = System.getenv("COACH_KEYSTORE_FILE")
+val coachKeystoreFile: File? = coachKeystorePath?.let { file(it) }?.takeIf { it.isFile }
+
 android {
     compileSdk = 37
 
@@ -22,12 +29,24 @@ android {
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
+    signingConfigs {
+        if (coachKeystoreFile != null) {
+            create("stable") {
+                storeFile = coachKeystoreFile
+                storePassword = System.getenv("COACH_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("COACH_KEY_ALIAS")
+                keyPassword = System.getenv("COACH_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
+            if (coachKeystoreFile != null) signingConfig = signingConfigs.getByName("stable")
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
             isMinifyEnabled = true
@@ -41,6 +60,7 @@ android {
             isMinifyEnabled = true
             isJniDebuggable = false
             applicationIdSuffix = ".debug"
+            if (coachKeystoreFile != null) signingConfig = signingConfigs.getByName("stable")
         }
         create("runTests") { // build variant for running tests on CI that skips tests known to fail
             isMinifyEnabled = false
@@ -50,7 +70,8 @@ android {
             isDebuggable = true
             isMinifyEnabled = false
             isJniDebuggable = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (coachKeystoreFile != null) signingConfigs.getByName("stable")
+                else signingConfigs.getByName("debug")
             applicationIdSuffix = ".debug"
             isDefault = true
         }
