@@ -1315,4 +1315,58 @@ New dictionary:
     <string name="gesture_data_swipe_o_scope">Tool for visualizing gesture data: &lt;a href=%s&gt;Swipe-O-Scope&lt;/a&gt;</string>
 
     <!-- new strings should go above the section for gesture data gathering -->
+
+    <!-- Typing coach and learning autocorrect -->
+    <string name="coach_title">Typing coach</string>
+    <string name="coach_category_learning">Learning autocorrect</string>
+    <string name="coach_category_rules">Correction rules</string>
+    <string name="coach_category_logging">Mistake log</string>
+    <string name="coach_category_touch">Touch offset</string>
+    <string name="coach_learned_corrections">Learned corrections</string>
+    <string name="coach_learned_corrections_summary">Apply a fix you typed yourself, once it was seen often enough. Works whether or not auto-correction is on.</string>
+    <string name="coach_learn_after">Learn a pair after N of my own fixes</string>
+    <string name="coach_learn_after_summary">How often you have to correct the same word before the keyboard does it for you.</string>
+    <string name="coach_override_native">Learned corrections override auto-correction</string>
+    <string name="coach_override_native_summary">When off, learned corrections are only applied while auto-correction is switched off.</string>
+    <string name="coach_remember_reverts">Remember my reverts</string>
+    <string name="coach_remember_reverts_summary">Keep reverted words as typed, and stop applying a correction you undid too often.</string>
+    <string name="coach_block_after_reverts">Block a pair after N reverts</string>
+    <string name="coach_misplaced_space">Fix misplaced spaces</string>
+    <string name="coach_misplaced_space_summary">Move a space by one or two letters, e.g. \"oka yi\" to \"okay i\".</string>
+    <string name="coach_misplaced_space_learn_after_summary">These pairs are guessed, so the default is more careful than for your own fixes.</string>
+    <string name="coach_two_capitals">Fix two capitals</string>
+    <string name="coach_two_capitals_summary">Turn \"YOur\" into \"Your\".</string>
+    <string name="coach_two_capital_exceptions">Exceptions for two capitals</string>
+    <string name="coach_two_capital_exceptions_summary">Words that are correct with two capitals, separated by commas.</string>
+    <string name="coach_summary">Summary</string>
+    <string name="coach_summary_summary">Mistakes per 1000 keys, most frequent confusions and speed.</string>
+    <string name="coach_log_mistakes">Log mistakes</string>
+    <string name="coach_log_mistakes_summary">Store your corrected words locally, so the log can be analysed. Off by default.</string>
+    <string name="coach_key_stats">Collect key statistics</string>
+    <string name="coach_key_stats_summary">Count taps and tap offsets per key. Contains no text at all.</string>
+    <string name="coach_export">Export log</string>
+    <string name="coach_export_summary">Writes a zip with the raw log, a per-key summary.csv and the learned corrections.</string>
+    <string name="coach_export_done">Log exported</string>
+    <string name="coach_export_failed">Could not export the log</string>
+    <string name="coach_clear">Clear data</string>
+    <string name="coach_clear_summary">Deletes the mistake log and the key statistics.</string>
+    <string name="coach_clear_confirm">Delete the whole mistake log and all key statistics? Learned corrections are kept.</string>
+    <string name="coach_touch_offset">Touch offset model</string>
+    <string name="coach_touch_offset_summary">Compensate for the constant offset of your thumbs. Keys do not move visually. Off by default.</string>
+    <string name="coach_touch_reset">Current offsets</string>
+    <string name="coach_touch_reset_confirm">Discard all collected key statistics and start the model over?</string>
+    <string name="coach_learned_list">Learned corrections list</string>
+    <string name="coach_learned_list_summary">View, delete, unblock, import or export the pairs the keyboard learned.</string>
+    <string name="coach_state_learned">learned</string>
+    <string name="coach_state_candidate">candidate</string>
+    <string name="coach_state_blocked">blocked</string>
+    <string name="coach_reverts">reverts</string>
+    <string name="coach_unblock">Unblock</string>
+    <string name="coach_delete">Delete</string>
+    <string name="coach_add">Add a pair</string>
+    <string name="coach_add_summary">Type typo=fix (for example teh=the), or a single word that must never be changed</string>
+    <string name="coach_import">Import pairs</string>
+    <string name="coach_export_list">Export pairs</string>
+    <string name="coach_keep_as_typed">Kept as typed</string>
+    <string name="coach_no_entries">Nothing recorded yet.</string>
 </resources>

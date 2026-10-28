@@ -25,6 +25,7 @@ import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import helium314.keyboard.coach.Coach;
 import helium314.keyboard.compat.AppWorkarounds;
 import helium314.keyboard.event.Event;
 import helium314.keyboard.event.InputTransaction;
@@ -1170,7 +1171,21 @@ public final class InputLogic {
         }
         // isComposingWord() may have changed since we stored wasComposing
         if (mWordComposer.isComposingWord()) {
-            if (settingsValues.mAutoCorrectEnabled && ! isInlineEmojiSearchAction()) {
+            final String typedWord = mWordComposer.getTypedWord();
+            // The learning autocorrect layer sits on top of the native one and works no matter how
+            // auto-correction is configured (see COACH.md).
+            final Coach.Decision coachDecision = Coach.decisionFor(settingsValues, mDictionaryFacilitator,
+                    typedWord, Coach.needsTextBeforeCursor() ? mConnection.getTextBeforeCursor(64, 0) : null);
+            if (coachDecision != null) {
+                final String separator = shouldAvoidSendingCode ? LastComposedWord.NOT_A_SEPARATOR
+                        : StringUtils.newSingleCodePointString(codePoint);
+                applyCoachDecision(settingsValues, coachDecision, separator);
+                inputTransaction.setDidAutoCorrect();
+            } else if (Coach.keepAsTyped(settingsValues, typedWord)) {
+                // the user asked to never change this word, so neither the coach nor the native
+                // auto-correction may touch it
+                commitTyped(settingsValues, StringUtils.newSingleCodePointString(codePoint));
+            } else if (settingsValues.mAutoCorrectEnabled && ! isInlineEmojiSearchAction()) {
                 final String separator = shouldAvoidSendingCode ? LastComposedWord.NOT_A_SEPARATOR
                         : StringUtils.newSingleCodePointString(codePoint);
                 commitCurrentAutoCorrection(settingsValues, separator, handler);
@@ -1270,6 +1285,42 @@ public final class InputLogic {
     }
 
     /**
+     * Applies a correction decided by the Typing coach (learned pair, two capitals or misplaced
+     * space). Reuses HeliBoard's commit machinery so that "Backspace reverts autocorrect" keeps
+     * working.
+     */
+    private void applyCoachDecision(final SettingsValues settingsValues,
+            final Coach.Decision decision, final String separator) {
+        final String typedWord = mWordComposer.getTypedWord();
+        if (decision.getReplaceLength() > 0) {
+            // misplaced space: the fix has the same length as "first second", so we replace the
+            // whole phrase. It is committed as plain text, no word is added to the user history.
+            final CharSequence typedPhrase = mConnection.getTextBeforeCursor(decision.getReplaceLength(), 0);
+            mConnection.finishComposingText();
+            mConnection.deleteTextBeforeCursor(decision.getReplaceLength());
+            mWordComposer.reset();
+            mConnection.commitText(decision.getReplacement(), 1);
+            if (typedPhrase != null && !TextUtils.equals(typedPhrase, decision.getReplacement())) {
+                Coach.markCoachCommit(decision.getKind());
+                Coach.onWordCommitted(settingsValues, mDictionaryFacilitator, typedPhrase.toString(),
+                        decision.getReplacement(), LastComposedWord.COMMIT_TYPE_DECIDED_WORD);
+            }
+            return;
+        }
+        Coach.markCoachCommit(decision.getKind());
+        commitChosenWord(settingsValues, decision.getReplacement(),
+                LastComposedWord.COMMIT_TYPE_DECIDED_WORD, separator);
+        if (!typedWord.equals(decision.getReplacement())) {
+            mConnection.commitCorrection(new CorrectionInfo(
+                    mConnection.getExpectedSelectionEnd() - decision.getReplacement().length(),
+                    typedWord, decision.getReplacement()));
+            StatsUtils.onAutoCorrection(typedWord, decision.getReplacement(), false,
+                    mDictionaryFacilitator, "");
+            StatsUtils.onWordCommitAutoCorrect(decision.getReplacement(), false);
+        }
+    }
+
+    /**
      * Handle a press on the backspace key.
      * @param event The event to handle.
      * @param inputTransaction The transaction in progress.
@@ -1278,6 +1329,8 @@ public final class InputLogic {
             final String currentKeyboardScript) {
         mSpaceState = SpaceState.NONE;
         mDeleteCount++;
+        // remember the word the user is about to fix by hand, so the retyped word can be learned
+        Coach.onBackspaceAtWordEnd(mConnection.getTextBeforeCursor(64, 0));
 
         // In many cases after backspace, we need to update the shift state. Normally we need
         // to do this right away to avoid the shift state being out of date in case the user types
@@ -1327,6 +1380,10 @@ public final class InputLogic {
         } else {
             if (mLastComposedWord.canRevertCommit() && inputTransaction.getSettingsValues().mBackspaceRevertsAutocorrect) {
                 final String lastComposedWord = mLastComposedWord.mTypedWord;
+                // a revert is the strongest signal that a correction was wrong: the Coach counts
+                // it against learned pairs and logs it as a negative example
+                Coach.onRevert(inputTransaction.getSettingsValues(), lastComposedWord,
+                        mLastComposedWord.mCommittedWord.toString());
                 revertCommit(inputTransaction);
                 StatsUtils.onRevertAutoCorrect();
                 StatsUtils.onWordCommitUserTyped(lastComposedWord, mWordComposer.isBatchMode());
@@ -2451,6 +2508,7 @@ public final class InputLogic {
      */
     private void commitChosenWord(final SettingsValues settingsValues, final String chosenWord,
             final int commitType, final String separatorString) {
+        final String typedWordBeforeCommit = mWordComposer.getTypedWord();
         long startTimeMillis = 0;
         if (DebugFlags.DEBUG_ENABLED) {
             startTimeMillis = SystemClock.elapsedRealtime();
@@ -2503,6 +2561,9 @@ public final class InputLogic {
             Log.d(TAG, "commitChosenWord() : " + runTimeMillis + " ms to run "
                     + "WordComposer.commitWord()");
         }
+        // the single place where every committed word passes by: learning, logging and stats
+        Coach.onWordCommitted(settingsValues, mDictionaryFacilitator, typedWordBeforeCommit,
+                chosenWord, commitType);
     }
 
     /**

@@ -24,6 +24,7 @@ import helium314.keyboard.settings.screens.DebugScreen
 import helium314.keyboard.settings.screens.DictionaryScreen
 import helium314.keyboard.settings.screens.GestureTypingScreen
 import helium314.keyboard.settings.screens.LanguageScreen
+import helium314.keyboard.settings.screens.LearnedCorrectionsScreen
 import helium314.keyboard.settings.screens.MainSettingsScreen
 import helium314.keyboard.settings.screens.PersonalDictionariesScreen
 import helium314.keyboard.settings.screens.PersonalDictionaryScreen
@@ -32,6 +33,7 @@ import helium314.keyboard.settings.screens.SecondaryLayoutScreen
 import helium314.keyboard.settings.screens.SubtypeScreen
 import helium314.keyboard.settings.screens.TextCorrectionScreen
 import helium314.keyboard.settings.screens.ToolbarScreen
+import helium314.keyboard.settings.screens.TypingCoachScreen
 import helium314.keyboard.settings.screens.gesturedata.GestureDataScreen
 import helium314.keyboard.settings.screens.gesturedata.ReviewScreen
 import kotlinx.coroutines.CoroutineScope
@@ -78,6 +80,7 @@ fun SettingsNavHost(
                 onClickLanguage = { navController.navigate(SettingsDestination.Languages) },
                 onClickLayouts = { navController.navigate(SettingsDestination.Layouts) },
                 onClickDictionaries = { navController.navigate(SettingsDestination.Dictionaries) },
+                onClickTypingCoach = { navController.navigate(SettingsDestination.TypingCoach) },
                 onClickBack = ::goBack,
             )
         }
@@ -86,6 +89,12 @@ fun SettingsNavHost(
         }
         composable(SettingsDestination.TextCorrection) {
             TextCorrectionScreen(onClickBack = ::goBack)
+        }
+        composable(SettingsDestination.TypingCoach) {
+            TypingCoachScreen(onClickBack = ::goBack)
+        }
+        composable(SettingsDestination.LearnedCorrections) {
+            LearnedCorrectionsScreen(onClickBack = ::goBack)
         }
         composable(SettingsDestination.Preferences) {
             PreferencesScreen(onClickBack = ::goBack)
@@ -148,6 +157,8 @@ object SettingsDestination {
     const val Settings = "settings"
     const val About = "about"
     const val TextCorrection = "text_correction"
+    const val TypingCoach = "typing_coach"
+    const val LearnedCorrections = "learned_corrections"
     const val Preferences = "preferences"
     const val Toolbar = "toolbar"
     const val GestureTyping = "gesture_typing"

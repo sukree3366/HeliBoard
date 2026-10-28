@@ -348,4 +348,5 @@ private val backupFilePatterns by lazy { listOf(
     "custom_font".toRegex(),
     "custom_emoji_font".toRegex(),
     "clipboard/.*".toRegex(),
+    "coach/learned\\.json".toRegex(), // learned corrections of the Typing coach
 ) }

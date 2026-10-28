@@ -42,6 +42,7 @@ fun MainSettingsScreen(
     onClickLanguage: () -> Unit,
     onClickLayouts: () -> Unit,
     onClickDictionaries: () -> Unit,
+    onClickTypingCoach: () -> Unit,
     onClickBack: () -> Unit,
 ) {
     SearchSettingsScreen(
@@ -94,6 +95,11 @@ fun MainSettingsScreen(
                     icon = R.drawable.ic_settings_correction
                 ) { NextScreenIcon() }
                 Preference(
+                    name = stringResource(R.string.coach_title),
+                    onClick = onClickTypingCoach,
+                    icon = R.drawable.ic_settings_correction
+                ) { NextScreenIcon() }
+                Preference(
                     name = stringResource(R.string.settings_screen_secondary_layouts),
                     onClick = onClickLayouts,
                     icon = R.drawable.ic_settings_layout
@@ -124,7 +130,7 @@ private fun PreviewScreen() {
     initPreview(LocalContext.current)
     Theme(previewDark) {
         Surface {
-            MainSettingsScreen({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            MainSettingsScreen({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
     }
 }

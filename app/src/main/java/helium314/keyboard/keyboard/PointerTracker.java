@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import helium314.keyboard.coach.Coach;
 import helium314.keyboard.event.HapticEvent;
 import helium314.keyboard.keyboard.internal.BatchInputArbiter;
 import helium314.keyboard.keyboard.internal.BatchInputArbiter.BatchInputArbiterListener;
@@ -130,6 +131,11 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     @NonNull
     private final int[] mDownCoordinates = CoordinateUtils.newInstance();
     private long mUpTime;
+
+    // Typing coach: where the finger landed and when, used to log tap offsets away from the key centre
+    private int mCoachDownX = Constants.NOT_A_COORDINATE;
+    private int mCoachDownY = Constants.NOT_A_COORDINATE;
+    private long mCoachDownTime = 0;
 
     // The current key where this pointer is.
     private Key mCurrentKey = null;
@@ -615,6 +621,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     }
 
     public void processMotionEvent(final MotionEvent me, final KeyDetector keyDetector) {
+        // Phase 3: shift the touch point before key detection (no-op unless enabled)
+        Coach.applyTouchOffset(me, mKeyboard);
         final int action = me.getActionMasked();
         final long eventTime = me.getEventTime();
         if (action == MotionEvent.ACTION_MOVE) {
@@ -647,6 +655,9 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     private void onDownEvent(final int x, final int y, final long eventTime,
             final KeyDetector keyDetector) {
+        mCoachDownX = x;
+        mCoachDownY = y;
+        mCoachDownTime = eventTime;
         setKeyDetectorInner(keyDetector);
         if (DEBUG_EVENT) {
             printTouchEvent("onDownEvent:", x, y, eventTime);
@@ -1318,6 +1329,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         }
 
         final int code = key.getCode();
+        Coach.onTap(key, mCoachDownX, mCoachDownY, mCoachDownTime, eventTime);
         callListenerOnCodeInput(key, code, x, y, eventTime, false);
         callListenerOnRelease(key, code, false);
     }
