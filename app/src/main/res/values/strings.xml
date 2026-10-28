@@ -1329,7 +1329,7 @@ New dictionary:
     <string name="coach_override_native">Learned corrections override auto-correction</string>
     <string name="coach_override_native_summary">When off, learned corrections are only applied while auto-correction is switched off.</string>
     <string name="coach_remember_reverts">Remember my reverts</string>
-    <string name="coach_remember_reverts_summary">Keep reverted words as typed, and stop applying a correction you undid too often.</string>
+    <string name="coach_remember_reverts_summary">Count the corrections you undo, and stop applying a pair you undid too often.</string>
     <string name="coach_block_after_reverts">Block a pair after N reverts</string>
     <string name="coach_misplaced_space">Fix misplaced spaces</string>
     <string name="coach_misplaced_space_summary">Move a space by one or two letters, e.g. \"oka yi\" to \"okay i\".</string>
